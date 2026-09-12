@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+harness_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$harness_root"
+
+required_paths=(
+  AGENTS.md
+  METHOD.md
+  README.md
+  profiles/codex/AGENTS.md
+  skills/develop-from-intent/SKILL.md
+  skills/change-intent/SKILL.md
+  skills/review-dev-method/SKILL.md
+  templates/project/AGENTS.md
+  templates/project/INTENT.md
+  templates/project/specs/README.md
+  templates/project/scripts/verify-project
+  templates/project/devenv.nix
+  templates/project/devenv.yaml
+  templates/project/orca.yaml
+  scripts/check
+  devenv.nix
+  devenv.yaml
+  orca.yaml
+)
+
+for path in "${required_paths[@]}"; do
+  if [[ ! -e "$path" ]]; then
+    printf 'missing required path: %s\n' "$path" >&2
+    exit 1
+  fi
+done
+
+for skill in develop-from-intent change-intent review-dev-method; do
+  skill_file="skills/$skill/SKILL.md"
+  if ! grep -Fqx "name: $skill" "$skill_file"; then
+    printf 'skill name does not match directory: %s\n' "$skill_file" >&2
+    exit 1
+  fi
+done
+
+nix-instantiate --parse devenv.nix >/dev/null
+nix-instantiate --parse templates/project/devenv.nix >/dev/null
+shellcheck scripts/check templates/project/scripts/verify-project
+git diff --check
+
+printf 'harness verification passed\n'
