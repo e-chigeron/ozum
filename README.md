@@ -31,6 +31,10 @@ devenv tasks run project:verify
 
 Orcaではこのリポジトリを登録し、base refを `main` にします。各worktreeのsetupは `devenv shell -- true` のみを行います。標準操作はdevenv taskを正本とし、Quick Commandへ重複させません。
 
+## 開発手法へのfeedback
+
+各projectは開発中に見つかった摩擦と証拠を保持し、dev-harnessへ構造化した変更候補を渡します。dev-harness側では `review-dev-method` を使い、複数projectへ一般化できる最小変更だけを `METHOD.md` と関連資材へ反映します。handoffは運搬手段であり、projectの証拠、手法の現在状態、変更理由はそれぞれのrepositoryとGit履歴を正本にします。
+
 ## V0で扱わないもの
 
 Jujutsu、自動Intent conflict hook、会話の永続保存、Context Compiler、常設ADR、Orca orchestration・automations・cloud workspaceは、具体的な不満が観測されるまで追加しません。
