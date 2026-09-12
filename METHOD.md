@@ -19,6 +19,8 @@
 
 上流側は現行手法との整合と証拠を確認し、観測で支持される最小変更だけを正本へ反映する。一時的なhandoff payloadはworkspace間の運搬に使っても、現在状態や変更理由の正本にはしない。
 
+異なるAI・workspace間で構造化したhandoffが必要な場合は、SQLite `.aictx` V0を一時payloadとして使う。受信側は最初にmetadataとentrypointを確認し、そこに連結した関連subgraphだけを展開する。意味上のnode/edge、SQLiteでの保存、LLM contextへの展開を分離し、全文投入、FTS、vector、event log、汎用context compilerはV0へ含めない。SQLite queryが単純な構造化textより繰り返し高コストになるか、利用環境で依存が不安定なら、意味モデルを保ったまま別のserializationへ切り替える。
+
 ## 変更履歴
 
 `INTENT.md` とspecには現在状態だけを書く。過去の理由が必要な場合は、対象を限定して次を使う。

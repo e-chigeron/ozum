@@ -35,6 +35,17 @@ Orcaではこのリポジトリを登録し、base refを `main` にします。
 
 各projectは開発中に見つかった摩擦と証拠を保持し、dev-harnessへ構造化した変更候補を渡します。dev-harness側では `review-dev-method` を使い、複数projectへ一般化できる最小変更だけを `METHOD.md` と関連資材へ反映します。handoffは運搬手段であり、projectの証拠、手法の現在状態、変更理由はそれぞれのrepositoryとGit履歴を正本にします。
 
+異なるAI・workspaceへ渡す構造が必要な場合は、一時的な SQLite `.aictx` V0を使えます。packetは既定でGitから除外されます。producerは `scripts/aictx init <packet.aictx>` で作成してnode、edge、entrypointと出典を追加します。consumerは次の順で必要な部分だけを読みます。
+
+```console
+scripts/aictx meta <packet.aictx>
+scripts/aictx entrypoints <packet.aictx>
+scripts/aictx expand <packet.aictx>
+scripts/aictx validate <packet.aictx>
+```
+
+schemaの正本は `aictx/schema.sql` です。V0 CLIは初期化、照会、関連subgraphの展開、integrityとforeign keyの検証だけを扱います。
+
 ## V0で扱わないもの
 
 Jujutsu、自動Intent conflict hook、会話の永続保存、Context Compiler、常設ADR、Orca orchestration・automations・cloud workspaceは、具体的な不満が観測されるまで追加しません。

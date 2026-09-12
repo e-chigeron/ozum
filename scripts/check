@@ -8,6 +8,7 @@ required_paths=(
   AGENTS.md
   METHOD.md
   README.md
+  aictx/schema.sql
   profiles/codex/AGENTS.md
   skills/develop-from-intent/SKILL.md
   skills/change-intent/SKILL.md
@@ -20,6 +21,8 @@ required_paths=(
   templates/project/devenv.yaml
   templates/project/orca.yaml
   scripts/check
+  scripts/aictx
+  scripts/test-aictx
   devenv.nix
   devenv.yaml
   orca.yaml
@@ -42,7 +45,8 @@ done
 
 nix-instantiate --parse devenv.nix >/dev/null
 nix-instantiate --parse templates/project/devenv.nix >/dev/null
-shellcheck scripts/check templates/project/scripts/verify-project
+shellcheck scripts/check scripts/aictx scripts/test-aictx templates/project/scripts/verify-project
+scripts/test-aictx
 git diff --check
 
 printf 'harness verification passed\n'

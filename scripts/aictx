@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+schema="$script_root/../aictx/schema.sql"
+
+usage() {
+  cat <<'EOF'
+Usage: scripts/aictx <command> <packet.aictx>
+
+Commands:
+  init         Create an empty V0 packet with required metadata
+  meta         Print packet metadata as JSON
+  entrypoints  Print ranked entrypoint nodes as JSON
+  expand       Print only the graph connected to the entrypoints as JSON
+  validate     Check schema markers, integrity, and foreign keys
+EOF
+}
+
+if [[ $# -ne 2 ]]; then
+  usage >&2
+  exit 64
+fi
+
+command_name="$1"
+packet="$2"
+
+if ! command -v sqlite3 >/dev/null 2>&1; then
+  printf 'sqlite3 is required\n' >&2
+  exit 69
+fi
+
+if [[ "$command_name" == "init" ]]; then
+  if [[ -e "$packet" ]]; then
+    printf 'refusing to replace existing packet: %s\n' "$packet" >&2
+    exit 73
+  fi
+  sqlite3 -bail "$packet" < "$schema"
+  exit
+fi
+
+if [[ ! -f "$packet" ]]; then
+  printf 'packet does not exist: %s\n' "$packet" >&2
+  exit 66
+fi
+
+case "$command_name" in
+  meta)
+    sqlite3 -readonly -json "$packet" \
+      'SELECT key, value FROM meta ORDER BY key;'
+    ;;
+  entrypoints)
+    sqlite3 -readonly -json "$packet" <<'SQL'
+SELECT e.rank, n.id, n.kind, n.state, n.priority, n.body, n.payload
+FROM entrypoints AS e
+JOIN nodes AS n ON n.id = e.node_id
+ORDER BY e.rank;
+SQL
+    ;;
+  expand)
+    sqlite3 -readonly -json "$packet" <<'SQL'
+WITH RECURSIVE reachable(id) AS (
+  SELECT node_id FROM entrypoints
+  UNION
+  SELECT CASE WHEN e.src = r.id THEN e.dst ELSE e.src END
+  FROM reachable AS r
+  JOIN edges AS e ON e.src = r.id OR e.dst = r.id
+)
+SELECT 'node' AS record_type, n.id AS id, n.kind AS kind, n.state AS state,
+       n.priority AS priority, ep.rank AS entrypoint_rank, n.body AS body,
+       n.payload AS payload, NULL AS src, NULL AS rel, NULL AS dst,
+       NULL AS edge_payload
+FROM reachable AS r
+JOIN nodes AS n ON n.id = r.id
+LEFT JOIN entrypoints AS ep ON ep.node_id = n.id
+UNION ALL
+SELECT 'edge', NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+       e.src, e.rel, e.dst, e.payload
+FROM edges AS e
+JOIN reachable AS src ON src.id = e.src
+JOIN reachable AS dst ON dst.id = e.dst
+ORDER BY 1 DESC, 6, 5 DESC, 2, 9, 10, 11;
+SQL
+    ;;
+  validate)
+    issues="$(sqlite3 -readonly -noheader "$packet" <<'SQL'
+SELECT 'integrity: ' || integrity_check
+FROM pragma_integrity_check
+WHERE integrity_check <> 'ok';
+
+SELECT printf('foreign key: %s rowid=%s references %s', "table", rowid, parent)
+FROM pragma_foreign_key_check;
+
+WITH required(name) AS (
+  VALUES ('artifacts'), ('edges'), ('entrypoints'), ('meta'), ('nodes'), ('sources')
+)
+SELECT 'missing table: ' || required.name
+FROM required
+LEFT JOIN sqlite_schema ON sqlite_schema.type = 'table'
+                       AND sqlite_schema.name = required.name
+WHERE sqlite_schema.name IS NULL;
+
+WITH required(key, value) AS (
+  VALUES ('format', 'aictx'), ('schema_version', '0'), ('canonical', 'false')
+)
+SELECT printf('invalid metadata: %s must equal %s', required.key, required.value)
+FROM required
+LEFT JOIN meta ON meta.key = required.key AND meta.value = required.value
+WHERE meta.key IS NULL;
+
+SELECT printf('invalid entrypoint rank: %s=%s', node_id, rank)
+FROM entrypoints
+WHERE rank <= 0;
+SQL
+)"
+    if [[ -n "$issues" ]]; then
+      printf '%s\n' "$issues" >&2
+      exit 1
+    fi
+    printf 'aictx validation passed\n'
+    ;;
+  *)
+    usage >&2
+    exit 64
+    ;;
+esac
