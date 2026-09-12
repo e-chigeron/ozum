@@ -10,7 +10,7 @@
 
 ## Projectからの還流
 
-開発projectを手法の実験場、dev-harnessを複数projectから学ぶ上流正本として扱う。project側では観測と証拠をそのprojectに残し、別repositoryの手法正本を直接編集しない。代わりに次を構造化した変更候補として上流へ渡す。
+開発projectで得た経験を理由と証拠を失わず、異なるAI・workspaceを越えて開発手法正本の改善へ還流させる。開発projectを観測と証拠の実験場、dev-harnessを複数projectから学ぶ上流正本として扱う。project側では観測と証拠をそのprojectに残し、別repositoryの手法正本を直接編集しない。代わりに次を構造化した変更候補として上流へ渡す。
 
 - 摩擦の発生条件、頻度、影響、現在の回避策
 - 根拠を確認できるproject内の証拠
