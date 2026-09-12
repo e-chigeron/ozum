@@ -39,3 +39,5 @@ Previous:
 Supersedes:
 Impact:
 ```
+
+commitは依頼または承認された場合だけ作る。作成したcommitは、明示的なlocal-only指定がない限り、検証後に設定済みupstreamへpushして同期する。外部変更の権限境界を維持し、remote、認証、対象branchを推測しない。同期できない場合はlocal commitを保持し、未同期の理由を報告する。

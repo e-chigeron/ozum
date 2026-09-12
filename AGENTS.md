@@ -13,5 +13,6 @@
 
 - 変更は一つの意味単位にまとめ、必要ならcommit本文に `Why:`、`Previous:`、`Supersedes:`、`Impact:` を残す。
 - commitは依頼に含まれる場合だけ行う。含まれない場合はcommit message案を返す。
+- 依頼・承認されたcommitは、明示的なlocal-only指定がなければ検証後に設定済みupstreamへpushする。remote、認証、対象branchを推測せず、失敗は未同期として報告する。
 - `devenv tasks run harness:check` を標準検証とする。
 - Skillを変更したらskill-creatorのvalidatorでも検証する。

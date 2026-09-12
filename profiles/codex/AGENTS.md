@@ -7,3 +7,4 @@
 - 詳細手順は必要時に `develop-from-intent`、`change-intent`、`review-dev-method` Skillから読む。
 - projectで開発手法の摩擦を観測したら、project内の証拠を保ち、`review-dev-method` で手法の上流正本へ変更候補を渡す。
 - commitは依頼に含まれる場合だけ行い、それ以外は理由を含むcommit message案を返す。
+- 依頼・承認されたcommitは、明示的なlocal-only指定がなければ検証後に設定済みupstreamへpushする。remote、認証、対象branchを推測せず、失敗は未同期として報告する。
