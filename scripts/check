@@ -8,7 +8,6 @@ required_paths=(
   AGENTS.md
   README.md
   profiles/codex/AGENTS.md
-  skills/develop-from-intent/SKILL.md
   skills/change-intent/SKILL.md
   skills/review-dev-method/SKILL.md
   templates/project/AGENTS.md
@@ -44,18 +43,10 @@ if [[ "$has_intent" != true ]]; then
   exit 1
 fi
 
-for skill in develop-from-intent change-intent review-dev-method; do
+for skill in change-intent review-dev-method; do
   skill_file="skills/$skill/SKILL.md"
   if ! grep -Fqx "name: $skill" "$skill_file"; then
     printf 'skill name does not match directory: %s\n' "$skill_file" >&2
-    exit 1
-  fi
-done
-
-sync_rule='- 依頼・承認されたcommitは、明示的なlocal-only指定がなければ検証後に設定済みupstreamへpushする。remote、認証、対象branchを推測せず、失敗は未同期として報告する。'
-for instructions in profiles/codex/AGENTS.md templates/project/AGENTS.md; do
-  if ! grep -Fqx -- "$sync_rule" "$instructions"; then
-    printf 'missing upstream sync rule: %s\n' "$instructions" >&2
     exit 1
   fi
 done
