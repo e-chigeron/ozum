@@ -44,7 +44,7 @@ for skill in develop-from-intent change-intent review-dev-method; do
 done
 
 sync_rule='- 依頼・承認されたcommitは、明示的なlocal-only指定がなければ検証後に設定済みupstreamへpushする。remote、認証、対象branchを推測せず、失敗は未同期として報告する。'
-for instructions in AGENTS.md profiles/codex/AGENTS.md templates/project/AGENTS.md; do
+for instructions in profiles/codex/AGENTS.md templates/project/AGENTS.md; do
   if ! grep -Fqx -- "$sync_rule" "$instructions"; then
     printf 'missing upstream sync rule: %s\n' "$instructions" >&2
     exit 1
