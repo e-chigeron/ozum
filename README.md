@@ -4,7 +4,7 @@
 
 配布する成果物とリファレンス実装は別の対象です。
 
-- `profiles/` と `skills/` は、他のプロジェクトでも利用できる配布用の共通指示・Skillsです。
+- `skills/` は、他のプロジェクトでも利用できる必要時だけ読む再利用手順です。
 - `templates/project/` は、個別プロジェクトがそのIntentと制約に適応させるための開発手法テンプレートです。
 - 個別プロジェクトは固有のIntentと判断を持ち、テンプレートの変更に自動追従しません。
 
@@ -12,14 +12,13 @@
 
 - `Intent/`: ОЗУМとそのリファレンス実装に求める現在の目的と制約
 - `AGENTS.md`: リファレンス実装を保守する方法と実行指示
-- `profiles/codex/AGENTS.md`: 配布用の全リポジトリ共通指示
 - `skills/`: 配布用の必要時だけ読む再利用手順
-- `templates/project/`: 新規プロジェクト向けの開発手法テンプレート
+- `templates/project/`: 新規プロジェクト向けの開発手法テンプレートと、コピー先を保守する `AGENTS.md`
 - `orca.yaml`: Orca worktreeのsetup
 
-ОЗУМ自身にも配布物を必要に応じて適用します。雛形の指示はコピー先だけで読めるよう、共通指示と一部重複します。
+ОЗУМ本体の `AGENTS.md` はリファレンス実装と配布物の保守を、雛形の `AGENTS.md` はコピー先の製品開発を扱います。各リポジトリの規則はそれぞれの `AGENTS.md` で完結し、共有Skillsは必要時だけ利用します。
 
-Home Managerによる共通指示とSkillsのout-of-store symlink配布設定は、このリポジトリの管理外です。配布元を移動またはSkillsを変更するときは、その設定のパスと列挙を実体に合わせます。別worktreeの編集やpushだけでは、配布元の作業ツリーは更新されません。
+Home Managerなどリポジトリ外の旧Profile symlinkは別途設定変更が必要です。Skillsの配布は引き続き必要に応じて管理します。別worktreeの編集やpushだけでは、配布元の作業ツリーは更新されません。
 
 共有Skillは `change-intent` と `review-dev-method` です。
 

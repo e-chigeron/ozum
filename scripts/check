@@ -7,7 +7,6 @@ cd "$harness_root"
 required_paths=(
   AGENTS.md
   README.md
-  profiles/codex/AGENTS.md
   skills/change-intent/SKILL.md
   skills/review-dev-method/SKILL.md
   templates/project/AGENTS.md
