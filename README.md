@@ -1,16 +1,17 @@
 # dev-harness
 
-AIとの対話でIntentを実装へ変換し、Gitと決定論的な検証で安全に固定するための最小構成です。Orcaにはworktree、session、diff/review、status hook、usage tracking、model/account切替を任せ、このリポジトリでは再実装しません。
+AIとの共同開発手法 ОЗУМ（опыт замысла, улучшающего меня）の正本です。現在の目的、採用している方法、変更理由を分けて管理し、開発経験から手法自体を改善します。
 
 ## 構成
 
-- `METHOD.md`: 開発手法の正本
+- `Intent/`: 現在の目的と制約
+- `AGENTS.md`: 現在採用している方法と保守指示
 - `profiles/codex/AGENTS.md`: 全リポジトリ共通の短い指示
 - `skills/`: 必要時だけ読む再利用手順
 - `templates/project/`: 新規プロジェクトの最小雛形
 - `orca.yaml`: Orca worktreeのsetup
 
-Home Managerは共通指示と3つのSkillをout-of-store symlinkで配布します。このため、ここでの変更はNixOSの再buildなしに新しいCodex sessionから反映されます。
+Home Managerは `/path/to/dev-harness` の共通指示と3つのSkillをout-of-store symlinkで配布します。その配布元への変更はNixOSの再buildなしに新しいCodex sessionへ反映されます。別worktreeの編集やpushだけでは配布元の作業ツリーは更新されません。
 
 ## 使い方
 
@@ -20,7 +21,7 @@ Home Managerは共通指示と3つのSkillをout-of-store symlinkで配布しま
 devenv tasks run harness:check
 ```
 
-新しいプロジェクトは雛形をコピーしてGitリポジトリにし、`INTENT.md` と必要なspecを現在状態に合わせて編集します。言語固有のtoolchainと検証は、そのプロジェクトの `devenv.nix` と `scripts/verify-project` に追加します。
+新しいプロジェクトは雛形をコピーし、`Intent/outcome.md` に具体的な目的を記入して、必要なspecを作成します。Intentは独立して変化する目的が生じたときに分割します。
 
 ```console
 cp -R templates/project /path/to/new-project
@@ -29,23 +30,12 @@ git init -b main
 devenv tasks run project:verify
 ```
 
-Orcaではこのリポジトリを登録し、base refを `main` にします。各worktreeのsetupは `devenv shell -- true` のみを行います。標準操作はdevenv taskを正本とし、Quick Commandへ重複させません。
+雛形の `project:verify` は構成と構文のみを検査します。製品のbuild・test・lintは、プロジェクトの `devenv.nix` と `scripts/verify-project` に定義します。共有Skillsは既存の `INTENT.md` を使うプロジェクトにも対応します。
 
-## 開発手法へのfeedback
+Orcaではbase refを `main` とし、worktreeのsetupは `devenv shell -- true` を行います。worktreeやsessionの管理はOrcaに任せます。
 
-各projectは開発中に見つかった摩擦と証拠を保持し、dev-harnessへ構造化した変更候補を渡します。dev-harness側では `review-dev-method` を使い、複数projectへ一般化できる最小変更だけを `METHOD.md` と関連資材へ反映します。handoffは運搬手段であり、projectの証拠、手法の現在状態、変更理由はそれぞれのrepositoryとGit履歴を正本にします。
+## 手法の改善
 
-異なるAI・workspaceへ渡す構造が必要な場合は、一時的な SQLite `.aictx` V0を使えます。packetは既定でGitから除外されます。producerは `scripts/aictx init <packet.aictx>` で作成してnode、edge、entrypointと出典を追加します。consumerは次の順で必要な部分だけを読みます。
+プロジェクトで見つかった摩擦は、そのプロジェクトの証拠を参照できる形でdev-harnessへ渡し、`review-dev-method` で検討します。転送形式や専用ツールは規定しません。
 
-```console
-scripts/aictx meta <packet.aictx>
-scripts/aictx entrypoints <packet.aictx>
-scripts/aictx expand <packet.aictx>
-scripts/aictx validate <packet.aictx>
-```
-
-schemaの正本は `aictx/schema.sql` です。V0 CLIは初期化、照会、関連subgraphの展開、integrityとforeign keyの検証だけを扱います。
-
-## V0で扱わないもの
-
-Jujutsu、自動Intent conflict hook、会話の永続保存、Context Compiler、常設ADR、Orca orchestration・automations・cloud workspaceは、具体的な不満が観測されるまで追加しません。
+現在の判断は `Intent/` と `AGENTS.md`、変更理由はGit履歴を参照します。SQLiteの専用handoff基盤は現行構成に含めません。既存の一時packetを誤って追跡しないよう、`*.aictx` のignoreは維持しています。

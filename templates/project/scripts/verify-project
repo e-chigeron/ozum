@@ -6,7 +6,6 @@ cd "$project_root"
 
 required_paths=(
   AGENTS.md
-  INTENT.md
   specs/README.md
   scripts/verify-project
   devenv.nix
@@ -21,6 +20,20 @@ for path in "${required_paths[@]}"; do
   fi
 done
 
+shopt -s nullglob globstar
+intent_files=(Intent/**/*.md)
+has_intent=false
+for intent_file in "${intent_files[@]}"; do
+  if grep -q '[^[:space:]]' "$intent_file"; then
+    has_intent=true
+    break
+  fi
+done
+if [[ "$has_intent" != true ]]; then
+  printf 'Intent/ must contain a non-empty Markdown file\n' >&2
+  exit 1
+fi
+
 nix-instantiate --parse devenv.nix >/dev/null
 shellcheck scripts/verify-project
 
@@ -28,4 +41,5 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   git diff --check
 fi
 
-printf 'project verification passed\n'
+# プロジェクト導入時に製品固有のbuild・test・lintを追加する。
+printf 'project scaffold checks passed (product build/test/lint not configured)\n'
