@@ -47,4 +47,4 @@ Orcaではbase refを `main` とし、worktreeのsetupは `devenv shell -- true`
 
 プロジェクトで見つかった摩擦は、そのプロジェクト内に証拠を残します。繰り返す摩擦、影響の大きい摩擦、または明示的な手法レビューでは、証拠を参照できる形でОЗУМリポジトリへ渡し、`review-dev-method` で検討します。転送形式や専用ツールは規定しません。
 
-現在の判断は `Intent/` と `AGENTS.md`、変更理由はGit履歴を参照します。SQLiteの専用handoff基盤は現行構成に含めません。既存の一時packetを誤って追跡しないよう、`*.aictx` のignoreは維持しています。
+現在の判断は `Intent/` と `AGENTS.md`、変更理由はGit履歴を参照します。

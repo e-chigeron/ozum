@@ -2,4 +2,3 @@
 .direnv/
 devenv.local.nix
 result
-*.aictx
