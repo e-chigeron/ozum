@@ -7,9 +7,12 @@ cd "$harness_root"
 required_paths=(
   AGENTS.md
   README.md
+  LICENSE
+  CONTRIBUTING.md
   skills/change-intent/SKILL.md
   skills/review-dev-method/SKILL.md
   templates/project/AGENTS.md
+  templates/project/LICENSE
   templates/project/specs/README.md
   templates/project/scripts/verify-project
   templates/project/devenv.nix
