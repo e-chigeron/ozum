@@ -1,0 +1,94 @@
+# この方針はCI・差分AIレビュー専用。ОЗУМ全体のコンテキスト方針ではない。
+name: AI consistency review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-consistency-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    outputs:
+      enabled: ${{ steps.config.outputs.enabled }}
+      final-message: ${{ steps.codex.outputs.final-message }}
+    steps:
+      - name: Check optional connection settings
+        id: config
+        env:
+          ENABLED: ${{ vars.AI_REVIEW_ENABLED }}
+          API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+          DRAFT: ${{ github.event.pull_request.draft }}
+        run: |
+          if [[ "$ENABLED" == true && -n "$API_KEY" && "$SAME_REPO" == true && "$DRAFT" == false ]]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v5
+        if: steps.config.outputs.enabled == 'true'
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prepare Git comparison and review prompt
+        if: steps.config.outputs.enabled == 'true'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          review_base="$(git merge-base "$BASE_SHA" "$HEAD_SHA")"
+          printf 'REVIEW_BASE=%s\nREVIEW_HEAD=%s\n' "$review_base" "$HEAD_SHA" >> "$GITHUB_ENV"
+          {
+            printf 'REVIEW_BASE=%s\nREVIEW_HEAD=%s\n' "$review_base" "$HEAD_SHA"
+            printf '以下はskills/review-consistency/SKILL.mdです。相対リンクはそのファイル基準で解決し、指定範囲をレビューしてください。指摘は参考情報として返してください。\n'
+            cat skills/review-consistency/SKILL.md
+          } > "$RUNNER_TEMP/consistency-prompt.md"
+      # API接続は未設定のまま配布する。Secret/Variablesの設定はREADMEを参照。
+      # drop-sudoによる権限制限の後に同じrunnerで追加作業を実行しない。
+      - name: Review semantic consistency
+        if: steps.config.outputs.enabled == 'true'
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: ${{ runner.temp }}/consistency-prompt.md
+          sandbox: read-only
+          safety-strategy: drop-sudo
+          model: ${{ vars.AI_REVIEW_MODEL }}
+
+  report:
+    needs: review
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Publish advisory job summary
+        uses: actions/github-script@v7
+        env:
+          REVIEW_ENABLED: ${{ needs.review.outputs.enabled }}
+          REVIEW_RESULT: ${{ needs.review.result }}
+          REVIEW_MESSAGE: ${{ needs.review.outputs.final-message }}
+        with:
+          script: |
+            const message = process.env.REVIEW_MESSAGE;
+            let status;
+            if (process.env.REVIEW_ENABLED === 'false') {
+              status = '未実行: AI_REVIEW_ENABLED / OPENAI_API_KEYが未設定、fork PR、またはdraft PRです。';
+            } else if (process.env.REVIEW_RESULT !== 'success' || !message) {
+              status = '未完了: AIレビューの失敗・中断、または結果を取得できませんでした。review jobのログを確認してください。';
+            } else {
+              status = 'AIレビューの参考結果です。機械検証の成功を意味せず、mergeの自動判定には使いません。';
+            }
+            await core.summary.addHeading('差分の意味的整合レビュー')
+              .addRaw(status).addEOL().addEOL()
+              .addRaw(message || '').write();

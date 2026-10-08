@@ -22,7 +22,7 @@
 
 Home Managerなどリポジトリ外の旧Profile symlinkは別途設定変更が必要です。Skillsの配布は引き続き必要に応じて管理します。別worktreeの編集やpushだけでは、配布元の作業ツリーは更新されません。
 
-共有Skillは `change-intent` と `review-dev-method` です。
+共有Skillは `change-intent`、`review-dev-method`、`review-consistency` です。
 
 Feature Specは現在満たすべき仕様・契約の正本です。本体の保守方法は [AGENTS.md](AGENTS.md)、目的・仕様変更の契約は [change-intent](skills/change-intent/SKILL.md)、手法改善の契約は [review-dev-method](skills/review-dev-method/SKILL.md)、検証・環境は [devenv.nix](devenv.nix) と [scripts/check](scripts/check)、worktree setupは [orca.yaml](orca.yaml) から読みます。既存の指示・設定に直接表現された仕様を別文書へ複製しません。コピー先の製品仕様の入口は [templates/project/specs/](templates/project/specs/README.md) です。
 
@@ -48,6 +48,30 @@ devenv tasks run project:verify
 雛形の `project:verify` は構成と構文のみを検査します。製品のbuild・test・lintは、プロジェクトの `devenv.nix` と `scripts/verify-project` に定義します。共有Skillsは既存の `INTENT.md` を使うプロジェクトにも対応します。
 
 Orcaではbase refを `main` とし、worktreeのsetupは `devenv shell -- true` を行います。worktreeやsessionの管理はOrcaに任せます。
+
+## CIと差分AIレビュー
+
+GitHub Actionsの [機械検証](.github/workflows/check.yml) はpush・PRで `harness:check` を実行します。[AIレビュー](.github/workflows/review-consistency.yml) はPR差分を [review-consistency](skills/review-consistency/SKILL.md) の契約で確認し、独立したjob summaryに参考結果を返します。AIの指摘や接続失敗を機械検証の結果と混ぜず、AI jobをrequired checkにすることは想定していません。
+
+AI接続は未設定です。利用する場合はGitHubのSettings → Secrets and variables → Actionsで次を設定します。キーのダミー文字列を登録する必要はありません。
+
+| 設定 | 値 |
+| --- | --- |
+| Secret `OPENAI_API_KEY` | `<利用するOpenAI APIキー>` |
+| Variable `AI_REVIEW_ENABLED` | `true`（未設定なら実行しない） |
+| Variable `AI_REVIEW_MODEL` | `<利用可能なモデルID>`（任意、未設定ならCodex既定値） |
+
+実行には[公式Codex GitHub Action](https://developers.openai.com/codex/github-action/)を使います。同一リポジトリのdraftではないPRを対象に、merge-baseからPR headまでを読み取り専用でレビューします。Action自身のユーザー権限チェックも適用されます。fork PR、未設定時は未実行を表示します。10分のjob制限と同じPRの古い実行の取消で遅延・重複を抑えます。Secret設定後のAPI接続、モデルの利用可否、費用、誤検出率は実運用で確認が必要です。
+
+Orca内のcoding agentや別CIでも、比較範囲を指定してSkillを読み、同じレビューを実行できます。GitHub非使用の未commit変更なら、たとえばCodex CLIで次を実行します。CLIのインストール・認証は利用環境に委ねます。
+
+```console
+codex exec --sandbox read-only 'skills/review-consistency/SKILL.mdを読み、未commit変更（staged・unstaged・未追跡）を意味的整合レビューしてください。変更せず結果だけ返してください。'
+```
+
+コピー先では共有Skillを利用可能にするか、雛形の `AGENTS.md` のレビュー規則をcoding agentへ渡します。GitHub ActionsやCodexをテンプレートの必須依存にはしません。
+
+変更差分から文脈を絞る規則はCI・差分AIレビュー専用で、ОЗУМ全体の方針ではありません。対応表・独自daemon・DB・状態同期は追加しません。費用・遅延・誤検出に見合う便益がない場合は `AI_REVIEW_ENABLED` を外し、機械検証と必要時のローカルレビューへ戻せます。確認範囲の妥当性、指摘の有用性、実行時間・API使用量を実運用で評価し、常時読む規則や仕組みを増やす前に見直します。
 
 ## 手法の改善
 

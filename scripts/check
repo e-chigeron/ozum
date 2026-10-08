@@ -11,6 +11,9 @@ required_paths=(
   CONTRIBUTING.md
   skills/change-intent/SKILL.md
   skills/review-dev-method/SKILL.md
+  skills/review-consistency/SKILL.md
+  .github/workflows/check.yml
+  .github/workflows/review-consistency.yml
   templates/project/AGENTS.md
   templates/project/LICENSE
   templates/project/specs/README.md
@@ -45,7 +48,7 @@ if [[ "$has_intent" != true ]]; then
   exit 1
 fi
 
-for skill in change-intent review-dev-method; do
+for skill in change-intent review-dev-method review-consistency; do
   skill_file="skills/$skill/SKILL.md"
   if ! grep -Fqx "name: $skill" "$skill_file"; then
     printf 'skill name does not match directory: %s\n' "$skill_file" >&2
@@ -56,6 +59,7 @@ done
 nix-instantiate --parse devenv.nix >/dev/null
 nix-instantiate --parse templates/project/devenv.nix >/dev/null
 shellcheck scripts/check templates/project/scripts/verify-project
+actionlint
 bash templates/project/scripts/verify-project
 git diff --check
 

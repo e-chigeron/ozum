@@ -9,6 +9,7 @@
 - Dashboard・Current State・候補仕様・Next Actions等のProjectionは必要時にIntent・Feature Spec・Git・Issue・実装から生成する一時的なビュー。削除しても正本を失わず再生成でき、人間が同期保守しないものとする。恒久ディレクトリや生成ファイルを必須化せず、会話や作業環境も正本にしない。
 - 現行文書には現在の判断を理解するための情報を残し、過去の経緯や未採用案を蓄積しない。引用・NOTE・Issueの議論だけを採用済みの仕様と扱わない。
 - 言語固有のtoolchainとbuild・test・lintを `devenv.nix` と `scripts/verify-project` に定義する。標準検証は `devenv tasks run project:verify` とする。雛形の検査だけでは製品を検証したことにならない。
+- CIやローカル差分のAI整合レビューには、利用可能なら `review-consistency` を使う。変更パス・差分から関連Specを選び、実装変更はSpecとの整合、Spec変更は関連Intentと実装、Intent変更は再評価が必要なSpecを確認する。通常の実装変更でIntentを常時投入せず、判断不能な場合だけ理由を示して探索を広げる。この範囲制限は差分AIレビューの方針であり、開発手法全体のコンテキスト方針ではない。Gitによる差分取得やtest・lintと意味的判定を分け、未確認範囲を明示する。GitHubや専用registryを前提にせず、coding agentの応答等で参考結果を返し、AIだけでmergeを決めない。
 - 手法の摩擦はプロジェクト内に証拠を残す。繰り返す摩擦、影響の大きい摩擦、または手法レビューの依頼がある場合に、ОЗУМへの改善候補を `review-dev-method` で検討する。通常の開発で毎回の提案や上流への送信を義務にしない。
 - `change-intent` と `review-dev-method` が利用可能なら該当時に使う。利用できない場合も、この文書の基本規則は外部の共通指示に依存しない。
 - 依頼の範囲でローカルのcommit・branch・履歴整理を自律的に行ってよい。作業完了時にはIntentに沿って説明できる意味のあるcommit単位に整理し、日本語のメッセージに変更理由と以前の判断との関係を残す。
