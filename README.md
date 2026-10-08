@@ -13,7 +13,7 @@
 ## 構成
 
 - `Intent/`: ОЗУМとそのリファレンス実装に求める現在の目的と制約
-- `AGENTS.md`: リファレンス実装を保守する方法と実行指示
+- `AGENTS.md`: リファレンス実装の保守方法のFeature Specと実行指示
 - `skills/`: 配布用の必要時だけ読む再利用手順
 - `templates/project/`: 新規プロジェクト向けの開発手法テンプレートと、コピー先を保守する `AGENTS.md`
 - `orca.yaml`: Orca worktreeのsetup
@@ -24,6 +24,10 @@ Home Managerなどリポジトリ外の旧Profile symlinkは別途設定変更�
 
 共有Skillは `change-intent` と `review-dev-method` です。
 
+Feature Specは現在満たすべき仕様・契約の正本です。本体の保守方法は [AGENTS.md](AGENTS.md)、目的・仕様変更の契約は [change-intent](skills/change-intent/SKILL.md)、手法改善の契約は [review-dev-method](skills/review-dev-method/SKILL.md)、検証・環境は [devenv.nix](devenv.nix) と [scripts/check](scripts/check)、worktree setupは [orca.yaml](orca.yaml) から読みます。既存の指示・設定に直接表現された仕様を別文書へ複製しません。コピー先の製品仕様の入口は [templates/project/specs/](templates/project/specs/README.md) です。
+
+仕様のファイル名・見出し・検索と、仕様からIntentへの参照で必要な範囲を辿ります。採用済みの要求と実装状態は区別し、後者は対象の実装・testsで確認します。Dashboard等の状態ビューは必要時に再生成し、正本として保守しません。
+
 ## 使い方
 
 このリポジトリ自体を検証します。
@@ -32,7 +36,7 @@ Home Managerなどリポジトリ外の旧Profile symlinkは別途設定変更�
 devenv tasks run harness:check
 ```
 
-新しいプロジェクトは雛形をコピーし、`Intent/outcome.md` に具体的な目的を記入して、必要なspecを作成します。Intentは独立して変化する目的が生じたときに分割します。
+新しいプロジェクトは雛形をコピーし、`Intent/outcome.md` に具体的な目的を記入して、必要なFeature Specを作成します。配置と責務は雛形の `specs/README.md` を参照してください。Intentは独立して変化する目的が生じたときに分割します。
 
 ```console
 cp -R templates/project /path/to/new-project
@@ -49,7 +53,7 @@ Orcaではbase refを `main` とし、worktreeのsetupは `devenv shell -- true`
 
 プロジェクトで見つかった摩擦は、そのプロジェクト内に証拠を残します。繰り返す摩擦、影響の大きい摩擦、または明示的な手法レビューでは、証拠を参照できる形でОЗУМリポジトリへ渡し、`review-dev-method` で検討します。転送形式や専用ツールは規定しません。
 
-現在の判断は `Intent/` と `AGENTS.md`、変更理由はGit履歴を参照します。
+現在の目的は `Intent/`、仕様と実装時の読み方は `AGENTS.md` および対象のFeature Spec、変更理由は対象仕様・実装のGit履歴を参照します。
 
 ## ライセンス
 
