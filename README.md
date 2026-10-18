@@ -16,7 +16,7 @@
 - `AGENTS.md`: リファレンス実装の保守方法のFeature Specと実行指示
 - `skills/`: 配布用の必要時だけ読む再利用手順
 - `templates/project/`: 新規プロジェクト向けの開発手法テンプレートと、コピー先を保守する `AGENTS.md`
-- `orca.yaml`: Orca worktreeのsetup
+- `orca.yaml`: 任意のOrca worktreeのsetup（手法の必須条件ではありません）
 
 ОЗУМ本体の `AGENTS.md` はリファレンス実装と配布物の保守を、雛形の `AGENTS.md` はコピー先の製品開発を扱います。各リポジトリの規則はそれぞれの `AGENTS.md` で完結し、共有Skillsは必要時だけ利用します。
 
@@ -24,7 +24,7 @@ Home Managerなどリポジトリ外の旧Profile symlinkは別途設定変更�
 
 共有Skillは `change-intent` と `review-dev-method` です。
 
-Feature Specは現在満たすべき仕様・契約の正本です。本体の保守方法は [AGENTS.md](AGENTS.md)、目的・仕様変更の契約は [change-intent](skills/change-intent/SKILL.md)、手法改善の契約は [review-dev-method](skills/review-dev-method/SKILL.md)、検証・環境は [devenv.nix](devenv.nix) と [scripts/check](scripts/check)、worktree setupは [orca.yaml](orca.yaml) から読みます。既存の指示・設定に直接表現された仕様を別文書へ複製しません。コピー先の製品仕様の入口は [templates/project/specs/](templates/project/specs/README.md) です。
+Feature Specは現在満たすべき仕様・契約の正本です。本体の保守方法は [AGENTS.md](AGENTS.md)、目的・仕様変更の契約は [change-intent](skills/change-intent/SKILL.md)、手法改善の契約は [review-dev-method](skills/review-dev-method/SKILL.md)、検証・環境は [devenv.nix](devenv.nix) と [scripts/check](scripts/check)、任意のOrca worktree setupは [orca.yaml](orca.yaml) から読みます。既存の指示・設定に直接表現された仕様を別文書へ複製しません。コピー先の製品仕様の入口は [templates/project/specs/](templates/project/specs/README.md) です。
 
 仕様のファイル名・見出し・検索と、仕様からIntentへの参照で必要な範囲を辿ります。採用済みの要求と実装状態は区別し、後者は対象の実装・testsで確認します。Dashboard等の状態ビューは必要時に再生成し、正本として保守しません。
 
@@ -42,12 +42,12 @@ devenv tasks run harness:check
 cp -R templates/project /path/to/new-project
 cd /path/to/new-project
 git init -b main
-devenv tasks run project:verify
+bash scripts/verify-project
 ```
 
-雛形の `project:verify` は構成と構文のみを検査します。製品のbuild・test・lintは、プロジェクトの `devenv.nix` と `scripts/verify-project` に定義します。共有Skillsは既存の `INTENT.md` を使うプロジェクトにも対応します。
+雛形の `scripts/verify-project` は構成とBash構文のみを検査します。製品のbuild・test・lintは既存の環境に定義し、実行コマンドをプロジェクトの `AGENTS.md` から辿れるようにします。Orca・GitHub・devenvの導入や既存環境の入れ替えは不要です。共有Skillsは既存の `INTENT.md` を使うプロジェクトにも対応します。
 
-Orcaではbase refを `main` とし、worktreeのsetupは `devenv shell -- true` を行います。worktreeやsessionの管理はOrcaに任せます。
+本体でOrcaを使う場合はbase refを `main` とし、任意の `orca.yaml` が `devenv shell -- true` を実行します。worktreeやsessionの管理には利用環境の既存機能を使います。
 
 ## 手法の改善
 
