@@ -8,9 +8,6 @@ required_paths=(
   AGENTS.md
   specs/README.md
   scripts/verify-project
-  devenv.nix
-  devenv.yaml
-  orca.yaml
 )
 
 for path in "${required_paths[@]}"; do
@@ -34,8 +31,7 @@ if [[ "$has_intent" != true ]]; then
   exit 1
 fi
 
-nix-instantiate --parse devenv.nix >/dev/null
-shellcheck scripts/verify-project
+bash -n scripts/verify-project
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   git diff --check

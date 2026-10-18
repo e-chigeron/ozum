@@ -1,3 +1,0 @@
-scripts:
-  setup: |
-    devenv shell -- true

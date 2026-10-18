@@ -15,13 +15,9 @@ required_paths=(
   templates/project/LICENSE
   templates/project/specs/README.md
   templates/project/scripts/verify-project
-  templates/project/devenv.nix
-  templates/project/devenv.yaml
-  templates/project/orca.yaml
   scripts/check
   devenv.nix
   devenv.yaml
-  orca.yaml
 )
 
 for path in "${required_paths[@]}"; do
@@ -54,7 +50,6 @@ for skill in change-intent review-dev-method; do
 done
 
 nix-instantiate --parse devenv.nix >/dev/null
-nix-instantiate --parse templates/project/devenv.nix >/dev/null
 shellcheck scripts/check templates/project/scripts/verify-project
 bash templates/project/scripts/verify-project
 git diff --check
