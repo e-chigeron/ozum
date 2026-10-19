@@ -1,0 +1,86 @@
+# ОЗУМ本体の検証専用。一般開発・配布先のコンテキスト方針ではない。
+name: AI Intent friction review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+concurrency:
+  group: intent-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      status: ${{ steps.prepare.outputs.status }}
+      message: ${{ steps.codex.outputs.final-message }}
+    steps:
+      - name: Check optional connection
+        id: config
+        env:
+          ENABLED: ${{ vars.AI_REVIEW_ENABLED }}
+          API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+          DRAFT: ${{ github.event.pull_request.draft }}
+        run: |
+          if [[ "$ENABLED" == true && -n "$API_KEY" && "$SAME_REPO" == true && "$DRAFT" == false ]]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          fi
+      # The base policy prepares neutral data; PR instructions are never loaded as policy.
+      - uses: actions/checkout@v5
+        if: steps.config.outputs.enabled == 'true'
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prepare review with base policy
+        id: prepare
+        env:
+          ENABLED: ${{ steps.config.outputs.enabled }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [[ "$ENABLED" != true ]]; then
+            echo 'status=disabled' >> "$GITHUB_OUTPUT"
+          elif [[ ! -f evals/prepare.py || ! -f evals/review.md ]]; then
+            echo 'status=bootstrap-required' >> "$GITHUB_OUTPUT"
+          else
+            python3 evals/prepare.py review --base "$(git merge-base "$BASE" "$HEAD")" --head "$HEAD" --out "$RUNNER_TEMP/intent-review"
+            echo 'status=prepared' >> "$GITHUB_OUTPUT"
+          fi
+      # Codex is the last step; report is published by a separate runner.
+      - name: Review Intent friction
+        id: codex
+        if: steps.prepare.outputs.status == 'prepared'
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          working-directory: ${{ runner.temp }}/intent-review
+          prompt-file: ${{ runner.temp }}/intent-review/prompt.md
+          sandbox: read-only
+          safety-strategy: drop-sudo
+          codex-args: '["--skip-git-repo-check"]'
+          model: ${{ vars.AI_REVIEW_MODEL }}
+  report:
+    needs: review
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          STATUS: ${{ needs.review.outputs.status }}
+          RESULT: ${{ needs.review.result }}
+          MESSAGE: ${{ needs.review.outputs.message }}
+        with:
+          script: |
+            const status = process.env.STATUS;
+            const message = process.env.MESSAGE;
+            let note;
+            if (status === 'disabled') note = '未実行：接続未設定、fork、またはdraft PR。';
+            else if (status === 'bootstrap-required') note = '未実行：baseに検証方針がない。初回は明示した方針でローカル検証する。';
+            else if (process.env.RESULT !== 'success' || !message) note = '未完了：失敗・中断・結果欠落。整合確認済みではない。';
+            else note = '参考結果。機械テスト・振る舞い検証の成功や自動mergeを意味しない。';
+            await core.summary.addHeading('ОЗУМ Intent摩擦レビュー')
+              .addRaw(note).addEOL().addEOL().addRaw(message || '').write();

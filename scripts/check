@@ -52,6 +52,9 @@ done
 nix-instantiate --parse devenv.nix >/dev/null
 shellcheck scripts/check templates/project/scripts/verify-project
 bash templates/project/scripts/verify-project
+actionlint
+python3 -m unittest discover -s tests -v
+python3 scripts/check-links.py
 git diff --check
 
 printf 'harness verification passed\n'
