@@ -1,0 +1,32 @@
+name: Mechanical checks
+on:
+  pull_request:
+  push:
+permissions:
+  contents: read
+concurrency:
+  group: mechanical-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: cachix/install-nix-action@v31
+      - uses: cachix/cachix-action@v16
+        with:
+          name: devenv
+      - name: Install devenv
+        run: nix profile add nixpkgs#devenv
+      - name: Verify repository
+        run: devenv tasks run harness:check
+      - name: Check committed PR whitespace
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: git diff --check "$(git merge-base "$BASE" "$HEAD")" "$HEAD" --
